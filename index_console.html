@@ -1,0 +1,140 @@
+<html>
+  <head>
+    <title>Console</title>
+    <script src='dependencies/jquery.js'></script>
+    <style>
+      #cursor { background-color:black;
+                border: 0px;
+                width: 3px;}
+      .console { font-family: courier;
+                 font-size: 14; }
+            </style>
+  </head>
+  <body>
+    <div height=200 width=200 style="border:1px solid black" class="console" id="console1">
+      <span class="uneditable"></span><span class="editable"></span><input id="cursor"/>
+    </div>
+    <script>
+    var currentLine = $(".editable").on("click", function(e) {relocate_cursor($(e.target), e.pageX);});
+    var consolodate = function(span)
+       {
+       var n = span.next();
+       if(n.is("span")) { span.text(span.text() + n.text()); n.remove();}
+       }
+    var processKey = function(code)
+      {
+      if(code == 13)
+        {
+        $("<br>").insertBefore("#cursor");
+        currentLine = $("<span class=\"editable\"></span>").insertBefore("#cursor");
+        currentLine.on("click", function(e){relocate_cursor($(e.target), e.pageX);});
+        } else if (code == 32) 
+        {
+        space()
+        } else {
+        currentLine.text(currentLine.text() + String.fromCharCode(code));
+        }
+      }
+    var uparrow = function()
+      {
+      var previousLine = currentLine.prev().prev();
+      var new_place = currentLine.text().length > previousLine.text().length?previousLine.text().length:currentLine.text().length;
+      relocate_cursor_to_char(previousLine, new_place);
+      }
+    var downarrow = function()
+      {
+      var nextLine = currentLine.next().next() 
+      while(nextLine.is("span")) nextLine = nextLine.next();
+      nextLine = nextLine.next();
+      var new_place = currentLine.text().length > nextLine.text().length?nextLine.text().length:currentLine.text().length;
+      relocate_cursor_to_char(nextLine, new_place);
+      }
+    var leftarrow = function()
+      {
+      var killMe;
+      if(currentLine.text().length > 0)
+        {
+        righthand = currentLine.next().next();
+        if( !righthand.is("span") )
+          {
+          righthand = $("<span class=\"editable\"></span>").insertAfter(currentLine.next());
+          }
+        righthand.text(currentLine.text().substr(-1) + righthand.text());
+        currentLine.text(currentLine.text().substr(0, currentLine.text().length-1));
+        } else {
+        killMe = currentLine;
+        currentLine = currentLine.prev().prev();
+        killMe.prev().remove();
+        killMe.remove();
+        }
+      }
+
+    var rightarrow = function()
+      {
+      righthand = currentLine.next().next();
+      if( righthand.is("span") )
+        {
+        currentLine.text( currentLine.text() + righthand.text().substr(0, 1) );
+        righthand.text(righthand.text().substr(1));
+        } else {
+        }
+      }
+    var backspace = function()
+      {
+      var str = currentLine.text();
+      var deleteMe;
+      if( str.length == 0 ) 
+        {
+        currentLine.prev().remove();
+        deleteMe = currentLine;
+        currentLine=currentLine.prev();
+        deleteMe.remove();
+        } else {
+        currentLine.text(str.substr(0, str.length-1));
+        }
+      }
+    var space = function()
+      {
+      currentLine.append("&nbsp;");
+      }
+    var tab = function()
+      {
+      currentLine.append("&nbsp;&nbsp;&nbsp;&nbsp;");
+    }
+
+    var relocate_cursor_to_char = function(span, new_place)
+      {
+      text = span.text();
+      leftstring = text.substr(0, new_place);
+      rightstring = text.substr(new_place);
+      span.text(leftstring);
+      $("#cursor").insertAfter(span).focus();
+      consolodate(currentLine);
+      currentLine=span;
+      $("<span class=\"editable\"></span>").on("click", function(e) {relocate_cursor($(e.target), e.pageX)}).insertAfter($("#cursor")).text(rightstring);
+      }
+
+    var relocate_cursor = function(span, x)
+      {
+      var text = span.text();
+      var spanwidth = span.width();
+      var leftstring, rightstring;
+      average_size = spanwidth/text.length;
+      new_place = (x - span.position().left) / average_size;
+      relocate_cursor_to_char(span, new_place);
+      }
+    $("#cursor").on("keypress", function(e){
+      var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
+      processKey(charCode); });
+    $("#cursor").on("keydown", function(e) {
+      switch(e.keyCode) {
+        case 9: tab(); return false;
+        case 37: leftarrow(); return true;
+        case 38: uparrow(); return true;
+        case 39: rightarrow(); return true;
+        case 40: downarrow(); return true;
+    } });
+    $("#cursor").on("keyup", function(e){ if(e.keyCode == 8) backspace(); } );
+    </script>
+  </body>
+</html>
